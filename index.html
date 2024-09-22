@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zooming Globe</title>
+    <style>
+        body { margin: 0; background: #000; }
+        canvas { display: block; }
+        .city-label {
+            position: absolute;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            pointer-events: none; /* Prevent mouse events */
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        let scene, camera, renderer, globe, controls;
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Globe setup
+            const geometry = new THREE.SphereGeometry(5, 64, 64);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x222244,
+                wireframe: true
+            });
+            globe = new THREE.Mesh(geometry, material);
+            scene.add(globe);
+
+            // Camera position
+            camera.position.z = 10;
+
+            // Orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+
+            // Add city labels
+            addCityLabel('New York', 40.7128, -74.0060);
+            addCityLabel('Tokyo', 35.6762, 139.6503);
+            addCityLabel('London', 51.5074, -0.1278);
+            addCityLabel('Sydney', -33.8688, 151.2093);
+
+            // Resize event
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        }
+
+        function addCityLabel(name, lat, lon) {
+            const label = document.createElement('div');
+            label.textContent = name;
+            label.className = 'city-label';
+            document.body.appendChild(label);
+
+            const pos = latLonToVector(lat, lon, 5);
+            label.style.left = `${(pos.x + 1) * window.innerWidth / 2}px`;
+            label.style.top = `${(-pos.y + 1) * window.innerHeight / 2}px`;
+        }
+
+        function latLonToVector(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            return {
+                x: -(radius * Math.sin(phi) * Math.cos(theta)),
+                y: radius * Math.cos(phi),
+                z: radius * Math.sin(phi) * Math.sin(theta)
+            };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // Update controls
+            globe.rotation.y += 0.001; // Rotate globe
+            renderer.render(scene, camera); // Render scene
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+</body>
+</html>
